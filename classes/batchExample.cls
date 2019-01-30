@@ -9,6 +9,7 @@ global class batchExample implements Database.Batchable<sObject>,Database.Statef
         integer c1 =1;
 		integer c2 = 2;
 		integer c3 = 3;
+
         list<contact> clist = new list<contact>();
         for(Contact con : conlist)
         {   
