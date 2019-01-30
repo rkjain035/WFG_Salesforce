@@ -1,0 +1,62 @@
+/*
+Property of Transamerica and Aegoncompanies.Do not distribute without permission.
+* Copyright (c) [2018] Transamerica Corporation, its affiliates and their licensors.
+* @author Rahul K Jain
+* @date 17-09-2018
+* @description   Test Class for Batch class to update "ReportsTo" on Agent Contacts based on the upline code in their respective AgentCode.
+	record
+Modification Log:
+--------------------------------------------------------------------------------------------------------
+Developer             Mod Number         Date                    Description
+--------------------------------------------------------------------------------------------------------
+Rahul K Jain           M-001             17-09-2018            Test Class for Batch class to update "ReportsTo" on Agent Contacts 
+                                                               based on the upline code in their respective AgentCode.
+*/
+@isTest
+public class WFG_AssignReportsToForAgentsTest {
+    
+    @testSetup Static void testSetup()
+    {       
+        WFG_Test_Data_Utility.createTriggerActivationRecords();
+        Account acc = WFG_Test_Data_Utility.createBranchOfficeTestRecord('Test Account', '0295V', 'USD');
+        insert acc;
+        
+        Contact agentContact = 
+            WFG_Test_Data_Utility.createContactTestRecord('Test', 'Agent', acc.Id, 'YUI890', 12);
+        
+        agentContact = WFG_Test_Data_Utility.updateContactTestRecord(agentContact, 'Agent');
+        insert agentContact;
+        
+        Date d = Date.today();
+        WFG_AgentCode__c agentContactAgentCode = 
+            WFG_Test_Data_Utility.CreateAgentCode(agentContact.WFG_AgentCode__c, agentContact.Id, d, true);
+        insert agentContactAgentCode;
+        
+        LIST<Contact> listDownlineContacts = new LIST<Contact>();
+        for(integer i=1;i<150;i++)
+        {
+            Contact c = WFG_Test_Data_Utility.createContactTestRecord('Downline'+i, 'Agent'+i, acc.Id, 'MC122'+i, 12);
+            c = WFG_Test_Data_Utility.updateContactTestRecord(c, 'Agent');
+            c.WFG_AgentCode__c = 'MC122'+i;
+            listDownlineContacts.add(c);
+        }
+        insert listDownlineContacts;
+        
+        LIST<WFG_AgentCode__c> listDownLineAgentCodes = new LIST<WFG_AgentCode__c>();
+        for(Contact c : listDownlineContacts)
+        {
+            WFG_AgentCode__c downLineAgentCode = WFG_Test_Data_Utility.CreateAgentCode(c.WFG_AgentCode__c, c.Id, d, true);
+            downLineAgentCode.WFG_UplineCode__c = agentContactAgentCode.Id;
+            listDownLineAgentCodes.add(downLineAgentCode);
+        }
+        insert listDownLineAgentCodes;
+    }
+    static testMethod void testMethod1()
+    {
+        Test.startTest();
+        	WFG_AssignReportsToForAgents obj = new WFG_AssignReportsToForAgents();
+        	Database.executeBatch(obj);
+        Test.stopTest();
+    }
+    
+}
